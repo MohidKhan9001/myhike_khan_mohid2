@@ -1,28 +1,14 @@
-// -------------------------------------------------------------
-// src/loginSignup.js
-// -------------------------------------------------------------
-// Part of the COMP1800 Projects 1 Course (BCIT).
-// Starter code provided for students to use and adapt.
-// Manages the login/signup form behaviour and redirects.
-// -------------------------------------------------------------
-
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap';
 import './styles/style.css';
+
 import {
     loginUser,
     signupUser,
     authErrorMessage,
 } from './authentication.js';
 
-
-// --- Login and Signup Page ---
-// Handles toggling between Login/Signup views and form submits
-// using plain DOM APIs for simplicity and maintainability.
-
-
 function initAuthUI() {
-    // --- DOM Elements ---
     const alertEl = document.getElementById('authAlert');
     const loginView = document.getElementById('loginView');
     const signupView = document.getElementById('signupView');
@@ -32,36 +18,37 @@ function initAuthUI() {
     const signupForm = document.getElementById('signupForm');
     const redirectUrl = 'main.html';
 
-    // --- Helper Functions ---
-    // Toggle element visibility
     function setVisible(el, visible) {
-        el.classList.toggle('d-none', !visible);
+        el?.classList.toggle('d-none', !visible);
     }
 
-    // Show error message with accessibility and auto-hide
     let errorTimeout;
+
     function showError(msg) {
+        if (!alertEl) {
+            alert(msg);
+            return;
+        }
+
         alertEl.textContent = msg || '';
         alertEl.classList.remove('d-none');
         clearTimeout(errorTimeout);
-        errorTimeout = setTimeout(hideError, 5000); // Auto-hide after 5s
+        errorTimeout = setTimeout(hideError, 10000);
     }
 
-    // Hide error message
     function hideError() {
-        alertEl.classList.add('d-none');
-        alertEl.textContent = '';
+        if (alertEl) {
+            alertEl.classList.add('d-none');
+            alertEl.textContent = '';
+        }
         clearTimeout(errorTimeout);
     }
 
-    // Enable/disable submit button for forms
     function setSubmitDisabled(form, disabled) {
         const submitBtn = form?.querySelector('[type="submit"]');
         if (submitBtn) submitBtn.disabled = disabled;
     }
 
-    // --- Event Listeners ---
-    // Toggle buttons
     toSignupBtn?.addEventListener('click', (e) => {
         e.preventDefault();
         hideError();
@@ -78,51 +65,64 @@ function initAuthUI() {
         loginView?.querySelector('input')?.focus();
     });
 
-    // Login form submit
+    // Login form
     loginForm?.addEventListener('submit', async (e) => {
         e.preventDefault();
         hideError();
-        const email = document.querySelector('#loginEmail')?.value?.trim() ?? '';
-        const password = document.querySelector('#loginPassword')?.value ?? '';
+
+        const email =
+            document.querySelector('#loginEmail')?.value?.trim() ?? '';
+        const password =
+            document.querySelector('#loginPassword')?.value ?? '';
+
         if (!email || !password) {
             showError('Please enter your email and password.');
             return;
         }
+
         setSubmitDisabled(loginForm, true);
+
         try {
             await loginUser(email, password);
             location.href = redirectUrl;
         } catch (err) {
-            showError(authErrorMessage(err));
-            console.error(err);
+            showError(`${err.code || 'Login error'}: ${err.message || authErrorMessage(err)}`);
+            console.error('Login failed:', err);
         } finally {
             setSubmitDisabled(loginForm, false);
         }
     });
 
-    // Signup form submit
+    // Signup form
     signupForm?.addEventListener('submit', async (e) => {
         e.preventDefault();
         hideError();
-        const name = document.querySelector('#signupName')?.value?.trim() ?? '';
-        const email = document.querySelector('#signupEmail')?.value?.trim() ?? '';
-        const password = document.querySelector('#signupPassword')?.value ?? '';
+
+        const name =
+            document.querySelector('#signupName')?.value?.trim() ?? '';
+        const email =
+            document.querySelector('#signupEmail')?.value?.trim() ?? '';
+        const password =
+            document.querySelector('#signupPassword')?.value ?? '';
+
         if (!name || !email || !password) {
             showError('Please fill in name, email, and password.');
             return;
         }
+
         setSubmitDisabled(signupForm, true);
+
         try {
             await signupUser(name, email, password);
             location.href = redirectUrl;
         } catch (err) {
-            showError(authErrorMessage(err));
-            console.error(err);
+            const details = `${err.code || 'Signup error'}: ${err.message || authErrorMessage(err)}`;
+            showError(details);
+            console.error('Signup failed:', err);
         } finally {
             setSubmitDisabled(signupForm, false);
         }
     });
 }
 
-// --- Initialize UI on DOMContentLoaded ---
 document.addEventListener('DOMContentLoaded', initAuthUI);
